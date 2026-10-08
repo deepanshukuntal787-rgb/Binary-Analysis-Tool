@@ -1,155 +1,449 @@
-# 🦠 Axumortem: Advanced Static Binary Analysis Engine
+# AXUMORTEM
+### Static Binary Analysis Engine for Malware Triage & Threat Intelligence
 
-## Table of Contents
-1. [Project Overview](#project-overview)
-2. [Core Capabilities](#core-capabilities)
-3. [System Architecture](#system-architecture)
-4. [Technical Stack](#technical-stack)
-5. [In-Depth Feature Breakdown](#in-depth-feature-breakdown)
-6. [Local Setup & Deployment](#local-setup--deployment)
-7. [Learning Modules](#learning-modules)
+<p align="center">
+  <img src="./assets/banner.png" alt="AXUMORTEM Banner" width="100%">
+</p>
 
----
-
-## 1. Project Overview
-**Axumortem** is a highly scalable, high-performance static binary analysis engine. Its primary purpose is to dissect compiled executables (without executing them) to identify malware, packed payloads, security vulnerabilities, and structural anomalies. 
-
-Built on a modern stack featuring **Rust** for heavy computational tasks and **React** for a sleek, data-rich user interface, Axumortem automates the reverse-engineering pipeline. It applies a multi-pass analysis system to parse headers, extract imports/exports, scan for known malware signatures using YARA, and disassemble machine code.
+<p align="center">
+  <strong>Dissecting binaries without execution.</strong><br>
+  ELF • PE • Mach-O • YARA • Entropy • Disassembly • MITRE ATT&CK
+</p>
 
 ---
 
-## 2. Core Capabilities
+## Overview
 
-- **Cross-Platform Binary Parsing:** Capable of parsing Linux (ELF), Windows (PE), and macOS (Mach-O) executable formats.
-- **YARA Signature Scanning:** Integrates `yara-x` to scan binaries against 14 built-in, industry-standard detection rules for ransomware, trojans, and crypto-miners.
-- **x86/x86_64 Disassembly:** Utilizes `iced-x86` to translate raw machine code into human-readable assembly instructions, generating Control Flow Graphs (CFGs).
-- **Entropy Analysis:** Calculates Shannon entropy across binary sections to detect encrypted or compressed (packed) payloads often used by malware authors to evade detection.
-- **MITRE ATT&CK Threat Scoring:** Maps discovered anomalies to the MITRE ATT&CK framework, generating a 100-point threat score to quickly assess the danger level of a file.
+AXUMORTEM is a modern static malware analysis platform designed to inspect executable files without executing them.
+
+The platform enables security researchers, malware analysts, incident responders, and reverse engineers to quickly assess suspicious binaries through automated static analysis techniques.
+
+Instead of running potentially dangerous files, AXUMORTEM extracts intelligence directly from the binary structure, imports, strings, entropy patterns, disassembly, and malware signatures.
 
 ---
 
-## 3. System Architecture
+## Why AXUMORTEM?
 
-The project is structured as a distributed micro-architecture, containerized using Docker.
+Traditional malware analysis often requires sandbox execution, virtualization, and behavioral monitoring.
+
+AXUMORTEM provides a safer first layer of defense by:
+
+- Identifying suspicious indicators before execution
+- Detecting known malware signatures
+- Highlighting obfuscation and packing techniques
+- Mapping behaviors to MITRE ATT&CK tactics
+- Providing rapid triage for incident response teams
+
+---
+
+# Core Capabilities
+
+## Cross-Platform Binary Parsing
+
+AXUMORTEM supports analysis of:
+
+- Windows PE Executables
+- Linux ELF Binaries
+- macOS Mach-O Files
+
+The engine automatically detects file type and extracts:
+
+- Headers
+- Sections
+- Imports
+- Exports
+- Symbols
+- Entry Points
+- Metadata
+
+---
+
+## YARA Signature Scanning
+
+The engine scans uploaded binaries against curated YARA rulesets.
+
+### Benefits
+
+- Detect known malware families
+- Identify ransomware samples
+- Recognize trojans and loaders
+- Flag suspicious indicators
+
+### Example
+
+```yara
+rule Suspicious_Powershell
+{
+    strings:
+        $ps = "powershell.exe"
+    condition:
+        $ps
+}
+```
+
+When matched, AXUMORTEM reports:
+
+- Rule Name
+- Severity
+- Description
+- Match Location
+
+---
+
+## Disassembly Analysis
+
+The platform performs static disassembly to reveal low-level program behavior.
+
+### Extracted Information
+
+- Functions
+- Control Flow
+- API Calls
+- Instructions
+- Suspicious Opcodes
+
+This enables analysts to understand:
+
+- Persistence mechanisms
+- Credential theft routines
+- Process injection attempts
+- Network communication logic
+
+---
+
+## String Extraction
+
+Embedded strings frequently reveal attacker intent.
+
+AXUMORTEM extracts:
+
+- ASCII Strings
+- UTF-8 Strings
+- Unicode Strings
+
+Examples:
 
 ```text
-┌─────────────────────────┐
-│     User Interface      │
-│     (React / Vite)      │
-└────────────┬────────────┘
-             │ (HTTP / JSON)
-             ▼
-┌─────────────────────────┐
-│       Nginx Proxy       │
-│     (Port: 22784)       │
-└────────────┬────────────┘
-             │ (Reverse Proxy)
-             ▼
-┌─────────────────────────┐      ┌─────────────────────────┐
-│   Backend API (Axum)    │─────▶│  PostgreSQL 18 (Data)   │
-│     (Port: 3000)        │      └─────────────────────────┘
-└────────────┬────────────┘
-             │
-      ┌──────┴──────┐
-      ▼             ▼
-┌───────────┐ ┌───────────┐
-│ YARA Scan │ │ Disasm /  │
-│  Engine   │ │ Entropy   │
-└───────────┘ └───────────┘
+cmd.exe
+powershell.exe
+CreateRemoteThread
+VirtualAllocEx
 ```
 
-### Data Flow
-1. **Upload:** A user uploads a binary file via the React frontend.
-2. **Routing:** Nginx proxies the upload to the Rust backend API.
-3. **Pipeline Execution:** The Rust backend executes a topological analysis pipeline:
-   - **Pass 1:** Format parsing (identifying if it's ELF, PE, etc.).
-   - **Pass 2:** Extraction of strings, imports, and exports.
-   - **Pass 3:** Heavy computation (YARA scanning, Entropy calculation, Disassembly).
-4. **Storage:** Results are aggregated, scored, and stored in the PostgreSQL database.
-5. **Presentation:** The frontend fetches the analysis report and renders it in an interactive dashboard.
+These indicators help identify:
+
+- Command execution
+- Injection techniques
+- C2 communication
+- Persistence behavior
 
 ---
 
-## 4. Technical Stack
+## Entropy Analysis
 
-### Backend
-- **Language:** Rust (chosen for memory safety and extreme performance)
-- **Framework:** Axum (high-performance web framework)
-- **Binary Parsing:** `goblin`
-- **Disassembly:** `iced-x86`
-- **Signature Scanning:** `yara-x`
-- **Database ORM:** SQLx
+Entropy measures randomness within binary sections.
 
-### Frontend
-- **Framework:** React 19 (TypeScript)
-- **Build Tool:** Vite
-- **State Management:** Zustand (global state) & TanStack Query (server state/caching)
-- **Styling:** SCSS Modules
+High entropy often indicates:
 
-### Infrastructure
-- **Database:** PostgreSQL 18
-- **Proxy:** Nginx
-- **Containerization:** Docker & Docker Compose
-- **Command Runner:** Just (`justfile`)
+- Packed executables
+- Encrypted payloads
+- Obfuscated malware
 
----
+### Shannon Entropy Scale
 
-## 5. In-Depth Feature Breakdown
+| Entropy | Interpretation |
+|----------|---------------|
+| 0 – 4 | Normal |
+| 4 – 6 | Moderate |
+| 6 – 8 | Suspicious |
+| > 7.5 | Likely Packed / Encrypted |
 
-### A. Format Parsing & Section Analysis
-When a binary is uploaded, the engine breaks it down into its core structural components:
-- **Headers:** Extracts target architecture, entry points, and compiler metadata.
-- **Sections:** Analyzes `.text` (code), `.data` (initialized data), and `.bss` (uninitialized data) sections.
-- **Import/Export Tables:** Identifies external DLLs/libraries the program relies on. (e.g., Identifying a dependency on `ws2_32.dll` on Windows indicates network activity capabilities).
-
-### B. Shannon Entropy Analysis
-Malware authors frequently compress ("pack") or encrypt their code to hide it from antivirus software. Axumortem calculates the **Shannon Entropy** (a measure of randomness from 0 to 8) for every section of the binary. 
-- A section with an entropy **> 7.2** is mathematically highly random, heavily implying encryption or packing.
-
-### C. YARA Scanning
-YARA is the industry standard for pattern matching. Axumortem runs the binary against a database of rules containing byte-patterns and strings associated with known malware families. If a rule triggers, the threat score increases significantly.
-
-### D. MITRE ATT&CK Threat Scoring
-Rather than just providing raw data, the engine interprets the results. It assigns a risk score (0-100) based on 8 categories. For example, if the engine detects anti-debugging tricks or network-socket imports, it maps these to specific MITRE ATT&CK tactics (like *Defense Evasion* or *Command and Control*) and elevates the threat score.
+The platform visualizes entropy per section to quickly identify anomalies.
 
 ---
 
-## 6. Local Setup & Deployment
+## MITRE ATT&CK Threat Scoring
 
-### Prerequisites
-- Docker Desktop
-- `git`
+AXUMORTEM maps discovered indicators to MITRE ATT&CK techniques.
 
-### Quick Start (Production Mode)
+Example:
+
+| Indicator | ATT&CK Technique |
+|------------|----------------|
+| PowerShell Execution | T1059.001 |
+| Registry Persistence | T1547 |
+| Process Injection | T1055 |
+| Credential Dumping | T1003 |
+
+This helps analysts understand attacker behavior patterns in a standardized framework.
+
+---
+
+# System Architecture
+
+```text
+                    ┌─────────────────────┐
+                    │     Frontend UI     │
+                    │      Next.js        │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │     REST API        │
+                    │      Rust/Axum      │
+                    └──────────┬──────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          ▼                    ▼                    ▼
+
+ ┌─────────────┐     ┌────────────────┐     ┌──────────────┐
+ │ File Parser │     │ YARA Scanner   │     │ Disassembler │
+ └─────────────┘     └────────────────┘     └──────────────┘
+          │                    │                    │
+          └──────────┬─────────┴─────────┬──────────┘
+                     ▼                   ▼
+
+           ┌───────────────────────┐
+           │ Analysis Aggregator   │
+           └──────────┬────────────┘
+                      ▼
+
+           ┌───────────────────────┐
+           │ PostgreSQL Database   │
+           └──────────┬────────────┘
+                      ▼
+
+           ┌───────────────────────┐
+           │ Threat Intelligence   │
+           │ & Reporting Engine    │
+           └───────────────────────┘
+```
+
+---
+
+# Analysis Workflow
+
+## Step 1 — Upload Binary
+
+User uploads:
+
+```text
+sample.exe
+sample.elf
+sample.macho
+```
+
+---
+
+## Step 2 — File Identification
+
+The engine determines:
+
+- File Type
+- Architecture
+- Compiler Information
+- Metadata
+
+---
+
+## Step 3 — Static Extraction
+
+AXUMORTEM extracts:
+
+- Imports
+- Exports
+- Strings
+- Sections
+- Headers
+
+---
+
+## Step 4 — YARA Scanning
+
+The binary is scanned against malware signatures.
+
+---
+
+## Step 5 — Entropy Analysis
+
+Each section is analyzed for:
+
+- Packing
+- Encryption
+- Obfuscation
+
+---
+
+## Step 6 — Disassembly
+
+Machine code is converted into human-readable assembly instructions.
+
+---
+
+## Step 7 — Threat Scoring
+
+Indicators are mapped to:
+
+- MITRE ATT&CK
+- Risk Categories
+- Threat Levels
+
+---
+
+## Step 8 — Results Dashboard
+
+The frontend presents:
+
+- Binary Overview
+- Imports
+- Strings
+- Entropy Graphs
+- YARA Hits
+- Threat Score
+
+---
+
+# Technology Stack
+
+## Backend
+
+- Rust
+- Axum
+- Tokio
+- SQLx
+- PostgreSQL
+- Serde
+- YARA
+
+---
+
+## Frontend
+
+- Next.js
+- TypeScript
+- TailwindCSS
+- React Query
+
+---
+
+## Infrastructure
+
+- Docker
+- Docker Compose
+- PostgreSQL
+- Linux Containers
+
+---
+
+# Project Structure
+
+```text
+axumortem/
+│
+├── backend/
+│   ├── src/
+│   ├── handlers/
+│   ├── services/
+│   ├── analysis/
+│   └── Cargo.toml
+│
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── lib/
+│   └── package.json
+│
+├── docker/
+│
+├── compose.yml
+│
+└── README.md
+```
+
+---
+
+# Local Setup
+
+## Production Environment
+
+Clone the repository:
+
 ```bash
-# 1. Clone the repository
-git clone https://github.com/deepanshukuntal787-rgb/Binary-Analysis-Tool.git
-cd Binary-Analysis-Tool
+git clone https://github.com/yourusername/axumortem.git
+cd axumortem
+```
 
-# 2. Configure Environment Variables
-cp .env.example .env
+Start containers:
 
-# 3. Spin up the containers
+```bash
 docker compose up -d
 ```
-Visit `http://localhost:22784` in your browser.
 
-### Development Mode (Hot-Reloading)
-To run the project locally while actively developing code:
+Verify services:
+
 ```bash
-docker compose -f dev.compose.yml up -d
+docker ps
+```
+
+Open:
+
+```text
+http://localhost:22784
 ```
 
 ---
 
-## 7. Learning Modules
-Axumortem was built with education in mind. The repository contains detailed guides breaking down the cybersecurity theory and software architecture behind the engine:
+## Development Environment
 
-- `learn/00-OVERVIEW.md` - Setup and intro
-- `learn/01-CONCEPTS.md` - Reverse engineering and malware analysis theory
-- `learn/02-ARCHITECTURE.md` - Rust backend design patterns
-- `learn/03-IMPLEMENTATION.md` - Code walkthrough
-- `learn/04-CHALLENGES.md` - Exercises for extending the engine
+Start with logs:
+
+```bash
+docker compose up
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+Restart:
+
+```bash
+docker compose restart
+```
 
 ---
-*Developed by Deepanshu Kuntal*
+
+# Future Enhancements
+
+- Dynamic Sandbox Analysis
+- Memory Dump Inspection
+- VirusTotal Integration
+- Sigma Rule Correlation
+- IOC Extraction
+- Threat Hunting Dashboard
+- AI-Powered Malware Classification
+- Graph-Based Attack Visualization
+
+---
+
+# Security Notice
+
+AXUMORTEM performs static analysis only.
+
+Do not execute untrusted binaries outside controlled environments.
+
+Always use isolated systems when handling malware samples.
+
+---
+
+# License
+
+MIT License
+
+---
+
+<p align="center">
+Built for Reverse Engineers, Malware Analysts, and Security Researchers.
+</p>
