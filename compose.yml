@@ -65,6 +65,7 @@ services:
       - POSTGRES_USER=axumortem
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-axumortem}
       - POSTGRES_DB=axumortem
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
