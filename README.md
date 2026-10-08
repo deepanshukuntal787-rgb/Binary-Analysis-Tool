@@ -19,6 +19,10 @@
 
 *This is a quick overview — security theory, architecture, and full walkthroughs are in the [learn modules](#learn).*
 
+## Interface
+
+![Axumortem Interface](./screenshot.png)
+
 ## What It Does
 
 - Multi-format binary parsing (ELF, PE, Mach-O) with section analysis and import table extraction
