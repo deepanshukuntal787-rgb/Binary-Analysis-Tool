@@ -15,59 +15,145 @@
 
 ## Overview
 
-AXUMORTEM is a modern static malware analysis platform designed to inspect executable files without executing them.
+AXUMORTEM is a modern static malware analysis platform built for malware analysts, incident responders, reverse engineers, and cybersecurity researchers.
 
-The platform enables security researchers, malware analysts, incident responders, and reverse engineers to quickly assess suspicious binaries through automated static analysis techniques.
-
-Instead of running potentially dangerous files, AXUMORTEM extracts intelligence directly from binary structure, imports, strings, entropy patterns, disassembly, and malware signatures.
+The platform performs deep static analysis on executable files without executing them, enabling safe malware triage and rapid threat assessment.
 
 ---
 
 ## Dashboard Preview
 
-<p align="center">
-  <img src="./assets/axumortem-ui.jpg" alt="AXUMORTEM Interface" width="100%">
-</p>
+### Features Visible in the Interface
 
-The interface provides a streamlined workflow for uploading binaries, running static analysis, and reviewing threat intelligence results in real time.
+- Drag-and-drop binary upload
+- Multi-format executable support
+- Automated analysis pipeline
+- Threat scoring engine
+- Static disassembly workflow
+- Entropy detection
+- String extraction
+- MITRE ATT&CK mapping
 
 ---
 
-## Core Features
+## Core Capabilities
 
-### Binary Parsing
+### Cross-Platform Binary Parsing
+
+Supports:
+
 - Windows PE
 - Linux ELF
 - macOS Mach-O
 
-### YARA Scanning
-- Malware signature matching
-- Rule-based threat detection
-- Family identification
+Extracts:
 
-### Entropy Analysis
-- Detect packed binaries
-- Identify encrypted sections
-- Highlight obfuscation techniques
-
-### Disassembly
-- Function extraction
-- API analysis
-- Instruction inspection
-
-### String Analysis
-- ASCII / UTF-8 / Unicode extraction
-- IOC discovery
-- Suspicious artifact detection
-
-### MITRE ATT&CK Mapping
-- Technique correlation
-- Threat scoring
-- Analyst-friendly reporting
+- Headers
+- Sections
+- Imports
+- Exports
+- Symbols
+- Entry points
+- Metadata
 
 ---
 
-## Architecture
+### YARA Signature Scanning
+
+Detects:
+
+- Malware families
+- Ransomware indicators
+- Loaders
+- Trojans
+- Suspicious artifacts
+
+Example:
+
+```yara
+rule Suspicious_Powershell
+{
+    strings:
+        $ps = "powershell.exe"
+
+    condition:
+        $ps
+}
+```
+
+---
+
+### Disassembly Analysis
+
+Provides:
+
+- Function discovery
+- Control flow inspection
+- API call analysis
+- Assembly instruction review
+- Suspicious opcode detection
+
+Useful for identifying:
+
+- Persistence mechanisms
+- Process injection
+- Credential theft
+- Network behavior
+
+---
+
+### String Extraction
+
+Extracts:
+
+- ASCII strings
+- UTF-8 strings
+- Unicode strings
+
+Examples:
+
+```text
+powershell.exe
+cmd.exe
+CreateRemoteThread
+VirtualAllocEx
+```
+
+---
+
+### Entropy Analysis
+
+Detects:
+
+- Packed executables
+- Encrypted payloads
+- Obfuscation techniques
+
+| Entropy | Interpretation |
+|----------|---------------|
+| 0-4 | Normal |
+| 4-6 | Moderate |
+| 6-8 | Suspicious |
+| >7.5 | Likely Packed/Encrypted |
+
+---
+
+### MITRE ATT&CK Mapping
+
+Maps indicators to ATT&CK techniques.
+
+Examples:
+
+| Indicator | Technique |
+|------------|-----------|
+| PowerShell Execution | T1059.001 |
+| Process Injection | T1055 |
+| Credential Dumping | T1003 |
+| Registry Persistence | T1547 |
+
+---
+
+## System Architecture
 
 ```text
 Frontend (Next.js)
@@ -80,35 +166,129 @@ Backend API (Rust + Axum)
 Parser YARA Disassembler
         │
         ▼
+ Analysis Engine
+        │
+        ▼
  PostgreSQL
+        │
+        ▼
+ Threat Scoring
 ```
+
+---
+
+## Analysis Workflow
+
+### 1. Upload Binary
+
+```text
+sample.exe
+sample.elf
+sample.macho
+```
+
+### 2. Identify Format
+
+- Architecture detection
+- Metadata extraction
+- Binary classification
+
+### 3. Static Extraction
+
+- Imports
+- Exports
+- Sections
+- Strings
+
+### 4. YARA Scan
+
+- Signature matching
+- Threat indicators
+
+### 5. Entropy Analysis
+
+- Packing detection
+- Encryption detection
+
+### 6. Disassembly
+
+- Assembly generation
+- Function analysis
+
+### 7. Threat Scoring
+
+- MITRE ATT&CK mapping
+- Risk classification
+
+### 8. Results Dashboard
+
+- Overview
+- Strings
+- Imports
+- Entropy
+- YARA hits
+- Threat score
+
+---
 
 ## Technology Stack
 
 ### Backend
+
 - Rust
 - Axum
 - Tokio
 - SQLx
 - PostgreSQL
+- Serde
 - YARA
 
 ### Frontend
+
 - Next.js
 - TypeScript
+- React
 - Tailwind CSS
 
 ### Infrastructure
+
 - Docker
 - Docker Compose
+- PostgreSQL
+
+---
+
+## Project Structure
+
+```text
+Binary-Analysis-Tool
+│
+├── backend/
+├── frontend/
+├── infra/
+├── assets/
+│   └── axumortem-ui.jpg
+│
+├── compose.yml
+├── dev.compose.yml
+├── justfile
+└── README.md
+```
 
 ---
 
 ## Local Setup
 
+Clone:
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/axumortem.git
-cd axumortem
+git clone https://github.com/deepanshukuntal787-rgb/Binary-Analysis-Tool.git
+cd Binary-Analysis-Tool
+```
+
+Start:
+
+```bash
 docker compose up -d
 ```
 
@@ -118,15 +298,31 @@ Open:
 http://localhost:22784
 ```
 
+Stop:
+
+```bash
+docker compose down
+```
+
 ---
 
 ## Future Enhancements
 
-- Dynamic Sandbox Analysis
-- VirusTotal Integration
-- IOC Extraction
-- Memory Analysis
-- AI-Powered Classification
+- Dynamic sandbox analysis
+- IOC extraction
+- VirusTotal integration
+- Sigma correlation
+- AI-powered classification
+- Threat intelligence enrichment
+- Attack graph visualization
+
+---
+
+## Security Notice
+
+AXUMORTEM performs static analysis only.
+
+Always handle malware samples inside isolated environments.
 
 ---
 
